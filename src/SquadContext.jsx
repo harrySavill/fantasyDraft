@@ -19,6 +19,7 @@ export function SquadProvider({ children }) {
     const [squad, setSquad] = useState([])
     const [startingCodes, setStartingCodes] = useState([])
     const [locked, setLocked] = useState(false)
+    const [captainCode, setCaptainCode] = useState(null)
 
     const spent = squad.reduce((total, p) => total + p.price, 0)
     const remainingBudget = Math.round((BUDGET - spent) * 10) / 10
@@ -87,6 +88,9 @@ export function SquadProvider({ children }) {
         const isStarting = startingCodes.includes(player.player_code)
         if (isStarting) {
             setStartingCodes((current) => current.filter((code) => code !== player.player_code))
+            if (captainCode === player.player_code) {
+                setCaptainCode(null)
+            }
             return { ok: true }
         }
 
@@ -103,6 +107,15 @@ export function SquadProvider({ children }) {
         return { ok: true }
     }
 
+    function setCaptain(player) {
+        if (locked) return { ok: false, reason: 'Your starting XI is locked in' }
+        if (!startingCodes.includes(player.player_code)) {
+            return { ok: false, reason: 'Captain must be in your starting XI' }
+        }
+        setCaptainCode(player.player_code)
+        return { ok: true }
+    }
+
     const isValidFormation =
         startingCodes.length === STARTING_XI_SIZE &&
         Object.entries(FORMATION_RULES).every(([pos, rule]) => {
@@ -114,11 +127,18 @@ export function SquadProvider({ children }) {
         if (!isValidFormation) {
             return { ok: false, reason: 'Pick a valid formation of exactly 11 players first' }
         }
+        if (!captainCode) {
+            return { ok: false, reason: 'Pick a captain before locking in' }
+        }
         setLocked(true)
         return { ok: true }
     }
 
-    const totalPoints = startingPlayers.reduce((total, p) => total + (p.total_points || 0), 0)
+    const totalPoints = startingPlayers.reduce((total, p) => {
+        const points = p.total_points || 0
+        const isCaptain = p.player_code === captainCode
+        return total + (isCaptain ? points * 2 : points)
+    }, 0)
 
     const value = {
         squad,
@@ -139,6 +159,8 @@ export function SquadProvider({ children }) {
         locked,
         lockFormation,
         totalPoints,
+        captainCode,
+        setCaptain,
     }
 
     return <SquadContext.Provider value={value}>{children}</SquadContext.Provider>

@@ -15,10 +15,19 @@ function FormationPicker() {
         lockFormation,
         totalPoints,
         benchPlayers,
+        captainCode,
+        setCaptain,
     } = useSquad()
 
     function handleClick(player) {
+        if (locked) return
         const result = toggleStarter(player)
+        if (!result.ok) alert(result.reason)
+    }
+
+    function handleCaptainClick(e, player) {
+        e.stopPropagation()
+        const result = setCaptain(player)
         if (!result.ok) alert(result.reason)
     }
 
@@ -33,7 +42,7 @@ function FormationPicker() {
                 <h2>{locked ? 'Final result' : 'Pick your Starting XI'}</h2>
                 <p className="formation-sub">
                     Formation <strong>{formationLabel}</strong>
-                    {!locked && <> · {startingCodes.length}/11 selected — tap a player to start or bench them</>}
+                    {!locked && <> · {startingCodes.length}/11 selected — tap a player to start or bench them, then pick a captain</>}
                     {locked && <> · bench points don't count towards your total</>}
                 </p>
             </div>
@@ -54,6 +63,7 @@ function FormationPicker() {
                         <div className="formation-row-cards">
                             {playersAtPosition.map((player) => {
                                 const isStarting = startingCodes.includes(player.player_code)
+                                const isCaptain = player.player_code === captainCode
                                 return (
                                     <PlayerCard
                                         key={player.player_code}
@@ -63,9 +73,23 @@ function FormationPicker() {
                                         disabled={locked}
                                         onClick={() => handleClick(player)}
                                         footer={
-                                            <div className={`player-card-tag ${isStarting ? 'tag-starting' : 'tag-bench'}`}>
-                                                {isStarting ? 'Starting' : 'Bench'}
-                                            </div>
+                                            <>
+                                                <div className={`player-card-tag ${isStarting ? 'tag-starting' : 'tag-bench'}`}>
+                                                    {isStarting ? 'Starting' : 'Bench'}
+                                                </div>
+                                                {!locked && isStarting && (
+                                                    <button
+                                                        type="button"
+                                                        className={`captain-btn${isCaptain ? ' is-captain' : ''}`}
+                                                        onClick={(e) => handleCaptainClick(e, player)}
+                                                    >
+                                                        {isCaptain ? '★ Captain' : 'Make captain'}
+                                                    </button>
+                                                )}
+                                                {locked && isCaptain && (
+                                                    <div className="captain-badge">★ Captain · 2×</div>
+                                                )}
+                                            </>
                                         }
                                     />
                                 )
@@ -76,7 +100,7 @@ function FormationPicker() {
             })}
 
             {!locked ? (
-                <button className="lock-formation-btn" disabled={!isValidFormation} onClick={handleLock}>
+                <button className="lock-formation-btn" disabled={!isValidFormation || !captainCode} onClick={handleLock}>
                     Lock in Starting XI
                 </button>
             ) : (

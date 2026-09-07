@@ -5,16 +5,73 @@ import PlayerCard from './PlayerCard'
 
 const POSITION_ORDER = ['GK', 'DEF', 'MID', 'FWD']
 
-const PRICE_BIAS_STRENGTH = 1.6
+const PRICE_BIAS_STRENGTH = 5
+const FETCH_PAGE_SIZE = 1000
 
-function weightedSample(items, weightFn, count) {
+async function fetchAllPlayerSeasons() {
+    let allRows = []
+    let from = 0
+
+    while (true) {
+        const to = from + FETCH_PAGE_SIZE - 1
+        const { data, error } = await supabase
+            .from('player_seasons')
+            .select('player_code, season, position, price, team_name, total_points, players(web_name)')
+            .range(from, to)
+
+        if (error) throw error
+        if (!data || data.length === 0) break
+
+        allRows = allRows.concat(data)
+        if (data.length < FETCH_PAGE_SIZE) break
+        from += FETCH_PAGE_SIZE
+    }
+
+    return allRows
+}
+
+function pickOneSeasonPerPlayer(items) {
+    const byPlayer = new Map()
+    for (const item of items) {
+        if (!byPlayer.has(item.player_code)) byPlayer.set(item.player_code, [])
+        byPlayer.get(item.player_code).push(item)
+    }
+    const representatives = []
+    for (const seasons of byPlayer.values()) {
+        const randomIndex = Math.floor(Math.random() * seasons.length)
+        representatives.push(seasons[randomIndex])
+    }
+    return representatives
+}
+
+function weightedSample(items, weightFn, count, keyFn = (item) => item.player_code) {
     const keyed = items.map((item) => {
         const weight = Math.max(weightFn(item), 0.0001)
         const u = Math.random()
         return { item, key: Math.pow(u, 1 / weight) }
     })
     keyed.sort((a, b) => b.key - a.key)
-    return keyed.slice(0, count).map((k) => k.item)
+
+    const seen = new Set()
+    const result = []
+    for (const { item } of keyed) {
+        const duplicateKey = keyFn(item)
+        if (seen.has(duplicateKey)) continue
+        seen.add(duplicateKey)
+        result.push(item)
+        if (result.length === count) break
+    }
+    return result
+}
+
+function getCheapestPriceByPosition(pool) {
+    const cheapest = {}
+    for (const player of pool) {
+        if (cheapest[player.position] === undefined || player.price < cheapest[player.position]) {
+            cheapest[player.position] = player.price
+        }
+    }
+    return cheapest
 }
 
 function DraftBoard() {
@@ -27,17 +84,15 @@ function DraftBoard() {
 
     useEffect(() => {
         async function fetchPool() {
-            const { data, error } = await supabase
-                .from('player_seasons')
-                .select('player_code, season, position, price, team_name, total_points, players(web_name)')
-
-            if (error) {
-                setError(error.message)
-            } else {
-                const flattened = data.map((p) => ({ ...p, web_name: p.players.web_name }))
+            try {
+                const rows = await fetchAllPlayerSeasons()
+                const flattened = rows.map((p) => ({ ...p, web_name: p.players.web_name }))
                 setPool(flattened)
+            } catch (err) {
+                setError(err.message)
+            } finally {
+                setLoading(false)
             }
-            setLoading(false)
         }
 
         fetchPool()
@@ -54,19 +109,37 @@ function DraftBoard() {
         }
 
         const draftedCodes = new Set(squad.map((p) => p.player_code))
+        const cheapestByPosition = getCheapestPriceByPosition(pool)
+
+        const remainingNeedsAfterThisPick = {}
+        for (const position of POSITION_ORDER) {
+            const filledSoFar = positionCounts[position] || 0
+            const willBeFilledByThisPick = position === nextPosition ? 1 : 0
+            remainingNeedsAfterThisPick[position] = Math.max(
+                POSITION_LIMITS[position] - filledSoFar - willBeFilledByThisPick,
+                0
+            )
+        }
+
+        const minCostForFutureSlots = POSITION_ORDER.reduce((total, position) => {
+            const cheapest = cheapestByPosition[position] || 0
+            return total + remainingNeedsAfterThisPick[position] * cheapest
+        }, 0)
 
         const eligible = pool.filter((player) => {
             if (player.position !== nextPosition) return false
             if (draftedCodes.has(player.player_code)) return false
-            if (player.price > remainingBudget) return false
             if ((teamCounts[player.team_name] || 0) >= 3) return false
+            if (player.price + minCostForFutureSlots > remainingBudget) return false
             return true
         })
 
+        const oneSeasonPerPlayer = pickOneSeasonPerPlayer(eligible)
+
         setCandidates(
-            weightedSample(eligible, (player) => Math.pow(player.price, PRICE_BIAS_STRENGTH), 5)
+            weightedSample(oneSeasonPerPlayer, (player) => Math.pow(player.price, PRICE_BIAS_STRENGTH), 5)
         )
-    }, [nextPosition, pool, squad, remainingBudget, teamCounts])
+    }, [nextPosition, pool, squad, remainingBudget, teamCounts, positionCounts])
 
     function handleDraft(player) {
         const result = addPlayer(player)
@@ -96,7 +169,7 @@ function DraftBoard() {
                 <div className="candidate-grid">
                     {candidates.map((player) => (
                         <PlayerCard
-                            key={player.player_code}
+                            key={`${player.player_code}-${player.season}`}
                             player={player}
                             showPoints={false}
                             onClick={() => handleDraft(player)}
