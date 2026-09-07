@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
-import { useSquad, POSITION_LIMITS } from './SquadContext'
+import { useSquad, POSITION_LIMITS, BUDGET } from './SquadContext'
+import PlayerCard from './PlayerCard'
 
-// Order slots get filled in
 const POSITION_ORDER = ['GK', 'DEF', 'MID', 'FWD']
 
-// Picks `count` random items from an array without repeats
-function sampleRandom(array, count) {
-    const shuffled = [...array].sort(() => Math.random() - 0.5)
-    return shuffled.slice(0, count)
+const PRICE_BIAS_STRENGTH = 1.6
+
+function weightedSample(items, weightFn, count) {
+    const keyed = items.map((item) => {
+        const weight = Math.max(weightFn(item), 0.0001)
+        const u = Math.random()
+        return { item, key: Math.pow(u, 1 / weight) }
+    })
+    keyed.sort((a, b) => b.key - a.key)
+    return keyed.slice(0, count).map((k) => k.item)
 }
 
 function DraftBoard() {
@@ -19,13 +25,11 @@ function DraftBoard() {
 
     const { squad, addPlayer, remainingBudget, positionCounts, teamCounts, isComplete } = useSquad()
 
-    // Load the full player pool once, on mount
     useEffect(() => {
         async function fetchPool() {
             const { data, error } = await supabase
                 .from('player_seasons')
                 .select('player_code, season, position, price, team_name, total_points, players(web_name)')
-                .eq('season', '2023-24')
 
             if (error) {
                 setError(error.message)
@@ -39,13 +43,10 @@ function DraftBoard() {
         fetchPool()
     }, [])
 
-    // Work out which position still needs filling
     const nextPosition = POSITION_ORDER.find(
         (position) => (positionCounts[position] || 0) < POSITION_LIMITS[position]
     )
 
-    // Whenever the squad changes (a player gets drafted) or the pool first
-    // loads, generate a fresh set of 5 random candidates for the next slot
     useEffect(() => {
         if (!nextPosition || pool.length === 0) {
             setCandidates([])
@@ -62,36 +63,46 @@ function DraftBoard() {
             return true
         })
 
-        setCandidates(sampleRandom(eligible, 5))
+        setCandidates(
+            weightedSample(eligible, (player) => Math.pow(player.price, PRICE_BIAS_STRENGTH), 5)
+        )
     }, [nextPosition, pool, squad, remainingBudget, teamCounts])
 
     function handleDraft(player) {
         const result = addPlayer(player)
-        if (!result.ok) {
-            alert(result.reason) // shouldn't normally happen, candidates are pre-filtered
-        }
+        if (!result.ok) alert(result.reason)
     }
 
-    if (loading) return <p>Loading players...</p>
-    if (error) return <p>Error: {error}</p>
-    if (isComplete) return <p><strong>Squad complete! Draft finished.</strong></p>
+    if (loading) return <div className="draft-status">Loading players…</div>
+    if (error) return <div className="draft-status draft-status-error">Error: {error}</div>
+    if (isComplete) return null
+
+    const budgetPct = Math.max(0, Math.min(100, (remainingBudget / BUDGET) * 100))
 
     return (
-        <div>
-            <h2>Drafting: {nextPosition}</h2>
-            <p>{remainingBudget.toFixed(1)}m remaining</p>
+        <div className="draft-board">
+            <div className="draft-board-header">
+                <span className={`position-tag pos-${nextPosition}`}>{nextPosition}</span>
+                <h2>Drafting your next {nextPosition}</h2>
+                <div className="budget-meter">
+                    <div className="budget-meter-fill" style={{ width: `${budgetPct}%` }} />
+                    <span className="budget-meter-label">£{remainingBudget.toFixed(1)}m left</span>
+                </div>
+            </div>
 
             {candidates.length === 0 ? (
-                <p>No valid players left for this slot (budget or team limit reached).</p>
+                <p className="draft-status">No valid players left for this slot (budget or club limit reached).</p>
             ) : (
-                <ul>
+                <div className="candidate-grid">
                     {candidates.map((player) => (
-                        <li key={player.player_code}>
-                            {player.web_name} - £{player.price}m - {player.team_name} - {player.total_points} pts
-                            <button onClick={() => handleDraft(player)}>Draft</button>
-                        </li>
+                        <PlayerCard
+                            key={player.player_code}
+                            player={player}
+                            showPoints={false}
+                            onClick={() => handleDraft(player)}
+                        />
                     ))}
-                </ul>
+                </div>
             )}
         </div>
     )
