@@ -16,7 +16,7 @@ async function fetchAllPlayerSeasons() {
         const to = from + FETCH_PAGE_SIZE - 1
         const { data, error } = await supabase
             .from('player_seasons')
-            .select('player_code, season, position, price, team_name, total_points, players(web_name)')
+            .select('*, players(web_name)')
             .range(from, to)
 
         if (error) throw error

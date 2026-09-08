@@ -58,7 +58,6 @@ body {
   text-transform: uppercase;
 }
 
-/* ---------- Layout ---------- */
 
 .draft-layout {
   display: grid;
@@ -83,7 +82,6 @@ body {
   color: var(--pos-fwd);
 }
 
-/* ---------- Position tags ---------- */
 
 .position-tag {
   display: inline-flex;
@@ -106,7 +104,6 @@ body {
 .pos-MID { background: var(--pos-mid); }
 .pos-FWD { background: var(--pos-fwd); }
 
-/* ---------- Draft board ---------- */
 
 .draft-board-header {
   margin-bottom: 24px;
@@ -152,7 +149,6 @@ body {
   gap: 16px;
 }
 
-/* ---------- Player card (FUT-pack style) ---------- */
 
 .player-card {
   position: relative;
@@ -290,7 +286,6 @@ body {
   background: var(--accent-bg);
 }
 
-/* ---------- Squad summary sidebar ---------- */
 
 .squad-summary {
   position: sticky;
@@ -358,7 +353,7 @@ body {
   overflow-y: auto;
 }
 
-.
+
 
 .squad-summary-name {
   color: var(--text-h);
@@ -383,7 +378,6 @@ body {
   font-size: 11px;
   color: var(--text);
 }
-/* ---------- Formation stage ---------- */
 
 .formation-stage {
   display: flex;
@@ -540,4 +534,209 @@ body {
   border: 1px solid var(--gold);
   background: rgba(242, 193, 78, 0.12);
   color: var(--gold);
+}
+
+
+.player-card-hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--accent);
+  text-align: center;
+  opacity: 0.75;
+}
+
+
+.breakdown-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 10, 0.72);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.breakdown-modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: linear-gradient(155deg, var(--surface-raised), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  animation: reveal 0.25s ease;
+}
+
+.breakdown-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-h);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.breakdown-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.breakdown-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
+}
+
+.breakdown-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.breakdown-header h3 {
+  font-family: var(--heading);
+  color: var(--text-h);
+  margin: 4px 0 2px;
+  font-size: 18px;
+}
+
+.breakdown-header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.breakdown-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+}
+
+.breakdown-total-label {
+  font-family: var(--heading);
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.breakdown-total-value {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--gold);
+}
+
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.breakdown-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.breakdown-row-icon {
+  font-size: 18px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.breakdown-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.breakdown-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.breakdown-row-label {
+  font-family: var(--heading);
+  font-size: 13px;
+  color: var(--text-h);
+}
+
+.breakdown-row-points {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.breakdown-row-points.is-positive { color: var(--accent); }
+.breakdown-row-points.is-negative { color: var(--pos-fwd); }
+
+.breakdown-row-count {
+  display: block;
+  font-size: 11px;
+  color: var(--text);
+  margin: 2px 0 4px;
+}
+
+.breakdown-bar-track {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.breakdown-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.breakdown-bar-fill.is-positive { background: var(--accent); }
+.breakdown-bar-fill.is-negative { background: var(--pos-fwd); }
+
+.breakdown-minutes {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text);
+}
+
+@media (max-width: 640px) {
+  .breakdown-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .breakdown-modal {
+    max-width: none;
+    max-height: 88vh;
+    border-radius: 16px 16px 0 0;
+    animation: sheet-up 0.25s ease;
+  }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }

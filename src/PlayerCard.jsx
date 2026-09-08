@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function PlayerCard({ player, showPoints = false, selected = false, disabled = false, onClick, footer }) {
+function PlayerCard({ player, showPoints = false, selected = false, disabled = false, onClick, footer, hint }) {
     const [imgFailed, setImgFailed] = useState(false)
     const photoUrl = `https://resources.premierleague.com/premierleague/photos/players/250x250/p${player.player_code}.png`
 
@@ -38,7 +38,7 @@ function PlayerCard({ player, showPoints = false, selected = false, disabled = f
             {showPoints && (
                 <div className="player-card-points">{player.total_points} pts</div>
             )}
-
+                {hint && <p className="player-card-hint">{hint}</p>}
             {footer}
         </button>
     )

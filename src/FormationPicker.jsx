@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useSquad, FORMATION_RULES } from './SquadContext'
 import PlayerCard from './PlayerCard'
+import PointsBreakdown from './PointsBreakdown'
 
 const POSITION_ORDER = ['GK', 'DEF', 'MID', 'FWD']
 
@@ -19,8 +21,13 @@ function FormationPicker() {
         setCaptain,
     } = useSquad()
 
+    const [breakdownPlayer, setBreakdownPlayer] = useState(null)
+
     function handleClick(player) {
-        if (locked) return
+        if (locked) {
+            setBreakdownPlayer(player)
+            return
+        }
         const result = toggleStarter(player)
         if (!result.ok) alert(result.reason)
     }
@@ -43,7 +50,7 @@ function FormationPicker() {
                 <p className="formation-sub">
                     Formation <strong>{formationLabel}</strong>
                     {!locked && <> · {startingCodes.length}/11 selected — tap a player to start or bench them, then pick a captain</>}
-                    {locked && <> · bench points don't count towards your total</>}
+                    {locked && <> · bench points don't count towards your total — tap a player for their points breakdown</>}
                 </p>
             </div>
 
@@ -70,7 +77,7 @@ function FormationPicker() {
                                         player={player}
                                         showPoints={locked}
                                         selected={isStarting}
-                                        disabled={locked}
+                                        hint={locked ? 'Tap for breakdown' : undefined}
                                         onClick={() => handleClick(player)}
                                         footer={
                                             <>
@@ -111,6 +118,10 @@ function FormationPicker() {
                         On the bench: {benchPlayers.map((p) => p.web_name).join(', ')}
                     </p>
                 </div>
+            )}
+
+            {breakdownPlayer && (
+                <PointsBreakdown player={breakdownPlayer} onClose={() => setBreakdownPlayer(null)} />
             )}
         </div>
     )
