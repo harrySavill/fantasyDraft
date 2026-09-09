@@ -1,19 +1,34 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 const GOAL_POINTS = { GK: 6, DEF: 6, MID: 5, FWD: 4 }
 const CLEAN_SHEET_POINTS = { GK: 4, DEF: 4, MID: 1, FWD: 0 }
 
+function getPlayerPhotoUrls(player) {
+    if (!player?.player_code) return []
+
+    const code = player.player_code
+
+    return [
+        `https://resources.premierleague.com/premierleague25/photos/players/110x140/${code}.png`,
+        `https://resources.premierleague.com/premierleague25/photos/players/250x250/${code}.png`,
+        `https://resources.premierleague.com/premierleague/photos/players/250x250/p${code}.png`,
+    ]
+}
+
 function estimateAppearancePoints(minutes) {
     if (!minutes || minutes <= 0) return 0
+
     const fullGames = Math.floor(minutes / 90)
     const remainder = minutes % 90
+
     return fullGames * 2 + (remainder > 0 ? 1 : 0)
 }
 
 function buildRows(player) {
     const pos = player.position
     const rows = []
-    const has = (field) => player[field] !== undefined && player[field] !== null
+    const has = (field) =>
+        player[field] !== undefined && player[field] !== null
 
     if (has('goals_scored') && player.goals_scored > 0) {
         rows.push({
@@ -21,7 +36,8 @@ function buildRows(player) {
             icon: '⚽',
             label: 'Goals',
             count: `${player.goals_scored} × ${GOAL_POINTS[pos] ?? 4}pts`,
-            points: player.goals_scored * (GOAL_POINTS[pos] ?? 4),
+            points:
+                player.goals_scored * (GOAL_POINTS[pos] ?? 4),
         })
     }
 
@@ -35,8 +51,13 @@ function buildRows(player) {
         })
     }
 
-    if ((pos === 'GK' || pos === 'DEF' || pos === 'MID') && has('clean_sheets') && player.clean_sheets > 0) {
+    if (
+        (pos === 'GK' || pos === 'DEF' || pos === 'MID') &&
+        has('clean_sheets') &&
+        player.clean_sheets > 0
+    ) {
         const per = CLEAN_SHEET_POINTS[pos] ?? 0
+
         if (per > 0) {
             rows.push({
                 key: 'clean_sheets',
@@ -48,8 +69,13 @@ function buildRows(player) {
         }
     }
 
-    if ((pos === 'GK' || pos === 'DEF') && has('goals_conceded') && player.goals_conceded > 0) {
+    if (
+        (pos === 'GK' || pos === 'DEF') &&
+        has('goals_conceded') &&
+        player.goals_conceded > 0
+    ) {
         const penalty = Math.floor(player.goals_conceded / 2)
+
         if (penalty > 0) {
             rows.push({
                 key: 'goals_conceded',
@@ -63,6 +89,7 @@ function buildRows(player) {
 
     if (pos === 'GK' && has('saves') && player.saves > 0) {
         const savePts = Math.floor(player.saves / 3)
+
         if (savePts > 0) {
             rows.push({
                 key: 'saves',
@@ -94,7 +121,10 @@ function buildRows(player) {
         })
     }
 
-    if (has('penalties_missed') && player.penalties_missed > 0) {
+    if (
+        has('penalties_missed') &&
+        player.penalties_missed > 0
+    ) {
         rows.push({
             key: 'pen_missed',
             icon: '✗',
@@ -135,7 +165,9 @@ function buildRows(player) {
     }
 
     if (has('minutes')) {
-        const appearancePoints = estimateAppearancePoints(player.minutes)
+        const appearancePoints =
+            estimateAppearancePoints(player.minutes)
+
         rows.push({
             key: 'appearances',
             icon: '👟',
@@ -145,7 +177,11 @@ function buildRows(player) {
         })
     }
 
-    const itemisedTotal = rows.reduce((sum, r) => sum + r.points, 0)
+    const itemisedTotal = rows.reduce(
+        (sum, r) => sum + r.points,
+        0
+    )
+
     const total = player.total_points || 0
     const remainder = total - itemisedTotal
 
@@ -159,17 +195,31 @@ function buildRows(player) {
         })
     }
 
-    rows.sort((a, b) => Math.abs(b.points) - Math.abs(a.points))
+    rows.sort(
+        (a, b) => Math.abs(b.points) - Math.abs(a.points)
+    )
+
     return { rows, total }
 }
 
 function PointsBreakdown({ player, onClose }) {
+    const [photoIndex, setPhotoIndex] = useState(0)
+
+    const photoUrls = getPlayerPhotoUrls(player)
+
+    useEffect(() => {
+        setPhotoIndex(0)
+    }, [player?.player_code])
+
     useEffect(() => {
         document.body.style.overflow = 'hidden'
+
         function handleKey(e) {
             if (e.key === 'Escape') onClose()
         }
+
         window.addEventListener('keydown', handleKey)
+
         return () => {
             document.body.style.overflow = ''
             window.removeEventListener('keydown', handleKey)
@@ -179,11 +229,19 @@ function PointsBreakdown({ player, onClose }) {
     if (!player) return null
 
     const { rows, total } = buildRows(player)
-    const maxAbs = Math.max(...rows.map((r) => Math.abs(r.points)), 1)
-    const photoUrl = `https://resources.premierleague.com/premierleague/photos/players/250x250/p${player.player_code}.png`
+
+    const maxAbs = Math.max(
+        ...rows.map((r) => Math.abs(r.points)),
+        1
+    )
+
+    const photoUrl = photoUrls[photoIndex]
 
     return (
-        <div className="breakdown-backdrop" onClick={onClose}>
+        <div
+            className="breakdown-backdrop"
+            onClick={onClose}
+        >
             <div
                 className="breakdown-modal"
                 role="dialog"
@@ -191,42 +249,106 @@ function PointsBreakdown({ player, onClose }) {
                 aria-label={`Points breakdown for ${player.web_name}`}
                 onClick={(e) => e.stopPropagation()}
             >
-                <button type="button" className="breakdown-close" onClick={onClose} aria-label="Close">
+                <button
+                    type="button"
+                    className="breakdown-close"
+                    onClick={onClose}
+                    aria-label="Close"
+                >
                     ✕
                 </button>
 
                 <div className="breakdown-header">
                     <div className="breakdown-photo">
-                        <img src={photoUrl} alt="" onError={(e) => { e.target.style.display = 'none' }} />
+                        {photoUrl && (
+                            <img
+                                src={photoUrl}
+                                alt=""
+                                onError={() => {
+                                    if (
+                                        photoIndex <
+                                        photoUrls.length - 1
+                                    ) {
+                                        setPhotoIndex(
+                                            (index) => index + 1
+                                        )
+                                    }
+                                }}
+                            />
+                        )}
                     </div>
+
                     <div>
-                        <span className={`position-tag pos-${player.position} small`}>{player.position}</span>
+                        <span
+                            className={`position-tag pos-${player.position} small`}
+                        >
+                            {player.position}
+                        </span>
+
                         <h3>{player.web_name}</h3>
-                        <p>{player.team_name} · {player.season}</p>
+
+                        <p>
+                            {player.team_name} · {player.season}
+                        </p>
                     </div>
                 </div>
 
                 <div className="breakdown-total">
-                    <span className="breakdown-total-label">Total points</span>
-                    <span className="breakdown-total-value">{total}</span>
+                    <span className="breakdown-total-label">
+                        Total points
+                    </span>
+
+                    <span className="breakdown-total-value">
+                        {total}
+                    </span>
                 </div>
 
                 <div className="breakdown-list">
                     {rows.map((row) => (
-                        <div className="breakdown-row" key={row.key}>
-                            <span className="breakdown-row-icon">{row.icon}</span>
+                        <div
+                            className="breakdown-row"
+                            key={row.key}
+                        >
+                            <span className="breakdown-row-icon">
+                                {row.icon}
+                            </span>
+
                             <div className="breakdown-row-main">
                                 <div className="breakdown-row-top">
-                                    <span className="breakdown-row-label">{row.label}</span>
-                                    <span className={`breakdown-row-points ${row.points < 0 ? 'is-negative' : 'is-positive'}`}>
-                                        {row.points > 0 ? '+' : ''}{row.points}
+                                    <span className="breakdown-row-label">
+                                        {row.label}
+                                    </span>
+
+                                    <span
+                                        className={`breakdown-row-points ${
+                                            row.points < 0
+                                                ? 'is-negative'
+                                                : 'is-positive'
+                                        }`}
+                                    >
+                                        {row.points > 0 ? '+' : ''}
+                                        {row.points}
                                     </span>
                                 </div>
-                                <span className="breakdown-row-count">{row.count}</span>
+
+                                <span className="breakdown-row-count">
+                                    {row.count}
+                                </span>
+
                                 <div className="breakdown-bar-track">
                                     <div
-                                        className={`breakdown-bar-fill ${row.points < 0 ? 'is-negative' : 'is-positive'}`}
-                                        style={{ width: `${(Math.abs(row.points) / maxAbs) * 100}%` }}
+                                        className={`breakdown-bar-fill ${
+                                            row.points < 0
+                                                ? 'is-negative'
+                                                : 'is-positive'
+                                        }`}
+                                        style={{
+                                            width: `${
+                                                (Math.abs(row.points) /
+                                                    maxAbs) *
+                                                100
+                                            }%`,
+                                        }}
                                     />
                                 </div>
                             </div>

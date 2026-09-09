@@ -396,7 +396,7 @@ body {
 }
 
 .player-card-compact.is-selected .player-card-compact-photo {
-  box-shadow: 0 0 0 2px var(--kit-secondary, transparent), 0 0 0 4px var(--accent);
+  box-shadow: 0 0 0 2px var(--kit-secondary, transparent), 0 0 0 4px var(--ring-color, var(--accent));
 }
 
 .player-card-compact-main:hover:not(:disabled) .player-card-compact-photo {
