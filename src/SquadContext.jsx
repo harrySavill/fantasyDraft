@@ -136,6 +136,13 @@ export function SquadProvider({ children }) {
         return { ok: true }
     }
 
+    function resetDraft() {
+        setSquad([])
+        setStartingCodes([])
+        setCaptainCode(null)
+        setLocked(false)
+    }
+
     const totalPoints = startingPlayers.reduce((total, p) => {
         const points = p.total_points || 0
         const multiplier = p.player_code === captainCode ? 2 : 1
@@ -163,6 +170,7 @@ export function SquadProvider({ children }) {
         isValidFormation,
         locked,
         lockFormation,
+        resetDraft,
         totalPoints,
     }
 

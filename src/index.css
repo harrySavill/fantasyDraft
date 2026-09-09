@@ -983,6 +983,26 @@ body {
   }
 }
 
+.restart-draft-btn {
+  margin-top: 18px;
+  font-family: var(--heading);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #0b0d14;
+  background: linear-gradient(90deg, var(--gold), var(--accent));
+  border: none;
+  border-radius: 8px;
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.restart-draft-btn:hover {
+  transform: translateY(-2px);
+}
+
 @media (min-width: 601px) {
   .squad-summary-list.is-collapsed {
     display: flex;

@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { useSquad } from './SquadContext'
 import PlayerCard from './PlayerCard'
-import PointsBreakdown from './PointsBreakdown' // adjust path/props if your component differs
-
-// Attacking end at the top, GK at the bottom — mirrors FUT/FPL pitch views.
+import PointsBreakdown from './PointsBreakdown'
 const PITCH_ROWS = ['FWD', 'MID', 'DEF', 'GK']
 
 function FormationPicker() {
@@ -20,6 +18,7 @@ function FormationPicker() {
         isValidFormation,
         locked,
         lockFormation,
+        resetDraft,
         totalPoints,
     } = useSquad()
 
@@ -42,6 +41,12 @@ function FormationPicker() {
     function handleLock() {
         const result = lockFormation()
         if (!result.ok) alert(result.reason)
+    }
+
+    function handleRestart() {
+        if (window.confirm('Start a brand new draft? This will clear your current squad and result.')) {
+            resetDraft()
+        }
     }
 
     const benchNow = locked ? benchPlayers : squad.filter((p) => !startingCodes.includes(p.player_code))
@@ -114,6 +119,9 @@ function FormationPicker() {
                     <p className="final-score-note">
                         Captain: {captainPlayer ? captainPlayer.web_name : '—'} (2x points) · On the bench: {benchPlayers.map((p) => p.web_name).join(', ')}
                     </p>
+                    <button className="restart-draft-btn" onClick={handleRestart}>
+                        Start New Draft
+                    </button>
                 </div>
             )}
 
