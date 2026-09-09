@@ -5,7 +5,7 @@ import PlayerCard from './PlayerCard'
 
 const POSITION_ORDER = ['GK', 'DEF', 'MID', 'FWD']
 
-const PRICE_BIAS_STRENGTH = 3.8
+const PRICE_BIAS_STRENGTH = 4.5
 const FETCH_PAGE_SIZE = 1000
 
 async function fetchAllPlayerSeasons() {
