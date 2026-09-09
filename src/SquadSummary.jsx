@@ -1,11 +1,22 @@
+import { useState } from 'react'
 import { useSquad, BUDGET, POSITION_LIMITS } from './SquadContext'
 
 function SquadSummary() {
     const { squad, spent, remainingBudget, positionCounts, isComplete } = useSquad()
+    const [expanded, setExpanded] = useState(false)
 
     return (
         <div className="squad-summary">
-            <h2>Your Squad <span className="squad-summary-count">{squad.length}/15</span></h2>
+            <div className="squad-summary-headrow">
+                <h2>Your Squad <span className="squad-summary-count">{squad.length}/15</span></h2>
+                <button
+                    type="button"
+                    className="squad-summary-toggle"
+                    onClick={() => setExpanded((current) => !current)}
+                >
+                    {expanded ? 'Hide list' : 'Show list'}
+                </button>
+            </div>
 
             <div className="squad-summary-budget">
                 <span>£{spent.toFixed(1)}m spent</span>
@@ -23,7 +34,7 @@ function SquadSummary() {
 
             {isComplete && <p className="squad-summary-complete">Squad complete — pick your Starting XI below.</p>}
 
-            <ul className="squad-summary-list">
+            <ul className={`squad-summary-list${expanded ? '' : ' is-collapsed'}`}>
                 {squad.map((player) => (
                     <li key={player.player_code}>
                         <span className={`position-tag pos-${player.position} small`}>{player.position}</span>

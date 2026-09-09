@@ -7,7 +7,7 @@ function AppContent() {
     const { isComplete } = useSquad()
 
     return (
-        <div className="app-shell">
+        <div className={`app-shell${isComplete ? ' app-shell-formation' : ''}`}>
             <header className="app-header">
                 <h1>Fantasy Draft</h1>
             </header>

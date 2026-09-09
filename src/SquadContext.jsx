@@ -18,8 +18,8 @@ export const FORMATION_RULES = {
 export function SquadProvider({ children }) {
     const [squad, setSquad] = useState([])
     const [startingCodes, setStartingCodes] = useState([])
-    const [locked, setLocked] = useState(false)
     const [captainCode, setCaptainCode] = useState(null)
+    const [locked, setLocked] = useState(false)
 
     const spent = squad.reduce((total, p) => total + p.price, 0)
     const remainingBudget = Math.round((BUDGET - spent) * 10) / 10
@@ -72,6 +72,7 @@ export function SquadProvider({ children }) {
 
     const startingPlayers = squad.filter((p) => startingCodes.includes(p.player_code))
     const benchPlayers = squad.filter((p) => !startingCodes.includes(p.player_code))
+    const captainPlayer = startingPlayers.find((p) => p.player_code === captainCode) || null
 
     const formationCounts = startingPlayers.reduce((counts, p) => {
         counts[p.position] = (counts[p.position] || 0) + 1
@@ -88,6 +89,7 @@ export function SquadProvider({ children }) {
         const isStarting = startingCodes.includes(player.player_code)
         if (isStarting) {
             setStartingCodes((current) => current.filter((code) => code !== player.player_code))
+            // Benching your captain clears the armband — pick a new one.
             if (captainCode === player.player_code) {
                 setCaptainCode(null)
             }
@@ -107,12 +109,12 @@ export function SquadProvider({ children }) {
         return { ok: true }
     }
 
-    function setCaptain(player) {
+    function setCaptain(playerCode) {
         if (locked) return { ok: false, reason: 'Your starting XI is locked in' }
-        if (!startingCodes.includes(player.player_code)) {
+        if (!startingCodes.includes(playerCode)) {
             return { ok: false, reason: 'Captain must be in your starting XI' }
         }
-        setCaptainCode(player.player_code)
+        setCaptainCode(playerCode)
         return { ok: true }
     }
 
@@ -128,7 +130,7 @@ export function SquadProvider({ children }) {
             return { ok: false, reason: 'Pick a valid formation of exactly 11 players first' }
         }
         if (!captainCode) {
-            return { ok: false, reason: 'Pick a captain before locking in' }
+            return { ok: false, reason: 'Choose a captain before locking in your XI' }
         }
         setLocked(true)
         return { ok: true }
@@ -136,8 +138,8 @@ export function SquadProvider({ children }) {
 
     const totalPoints = startingPlayers.reduce((total, p) => {
         const points = p.total_points || 0
-        const isCaptain = p.player_code === captainCode
-        return total + (isCaptain ? points * 2 : points)
+        const multiplier = p.player_code === captainCode ? 2 : 1
+        return total + points * multiplier
     }, 0)
 
     const value = {
@@ -152,6 +154,9 @@ export function SquadProvider({ children }) {
         startingCodes,
         startingPlayers,
         benchPlayers,
+        captainCode,
+        captainPlayer,
+        setCaptain,
         formationCounts,
         formationLabel,
         toggleStarter,
@@ -159,8 +164,6 @@ export function SquadProvider({ children }) {
         locked,
         lockFormation,
         totalPoints,
-        captainCode,
-        setCaptain,
     }
 
     return <SquadContext.Provider value={value}>{children}</SquadContext.Provider>
